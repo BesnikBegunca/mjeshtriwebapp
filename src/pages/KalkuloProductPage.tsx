@@ -1,5 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+    createKalkuloProduct,
+    updateKalkuloProduct,
+} from "../services/kalkulo-products.service";
 import type { ProductCalcItem } from "../types";
+
+type Mode = "create" | "edit";
+
+type LocationState = {
+    mode?: Mode;
+    product?: ProductCalcItem;
+};
 
 function safeNumber(value: string | number): number {
     const parsed = Number(value);
@@ -21,7 +34,70 @@ function emptyProduct(): ProductCalcItem {
 }
 
 export default function KalkuloProductPage() {
-    const [productForm, setProductForm] = useState<ProductCalcItem>(emptyProduct());
+    const navigate = useNavigate();
+    const location = useLocation();
+    const queryClient = useQueryClient();
+
+    const state = (location.state as LocationState | null) ?? null;
+    const mode: Mode = state?.mode === "edit" ? "edit" : "create";
+
+    const initialProduct = useMemo(() => {
+        if (mode === "edit" && state?.product) {
+            return {
+                ...state.product,
+                kodi: String(state.product.kodi ?? ""),
+                emertimi: String(state.product.emertimi ?? ""),
+                pako: String(state.product.pako ?? ""),
+                sasiaPer100m2: safeNumber(state.product.sasiaPer100m2),
+                vleraPer100m2: safeNumber(state.product.vleraPer100m2),
+                tvshPer100m2: safeNumber(state.product.tvshPer100m2),
+                ownerId: String(state.product.ownerId ?? ""),
+            };
+        }
+
+        return emptyProduct();
+    }, [mode, state]);
+
+    const [productForm, setProductForm] = useState<ProductCalcItem>(initialProduct);
+
+    const saveMutation = useMutation({
+        mutationFn: async () => {
+            const emertimi = String(productForm.emertimi ?? "").trim();
+            if (!emertimi) {
+                throw new Error("Shkruaje emërtimin e produktit.");
+            }
+
+            const payload = {
+                kodi: String(productForm.kodi ?? "").trim(),
+                emertimi,
+                pako: String(productForm.pako ?? "").trim(),
+                sasiaPer100m2: safeNumber(productForm.sasiaPer100m2),
+                vleraPer100m2: safeNumber(productForm.vleraPer100m2),
+                tvshPer100m2: safeNumber(productForm.tvshPer100m2),
+            };
+
+            if (mode === "edit" && productForm.id) {
+                await updateKalkuloProduct({
+                    id: productForm.id,
+                    ...payload,
+                });
+                return;
+            }
+
+            await createKalkuloProduct(payload);
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["kalkulo_products"] });
+            navigate("/kalkulo");
+        },
+        onError: (error) => {
+            const message =
+                error instanceof Error && error.message.trim()
+                    ? error.message
+                    : "Ruajtja dështoi.";
+            window.alert(message);
+        },
+    });
 
     const handleProductFormChange = <K extends keyof ProductCalcItem>(
         key: K,
@@ -34,36 +110,22 @@ export default function KalkuloProductPage() {
     };
 
     const handleSave = () => {
-        const emertimi = String(productForm.emertimi ?? "").trim();
-
-        if (!emertimi) {
-            window.alert("Shkruaje emërtimin e produktit.");
-            return;
-        }
-
-        const payload: ProductCalcItem = {
-            id: `local-${Date.now()}`,
-            kodi: String(productForm.kodi ?? "").trim(),
-            emertimi,
-            pako: String(productForm.pako ?? "").trim(),
-            sasiaPer100m2: safeNumber(productForm.sasiaPer100m2),
-            vleraPer100m2: safeNumber(productForm.vleraPer100m2),
-            tvshPer100m2: safeNumber(productForm.tvshPer100m2),
-            ownerId: "",
-        };
-
-        console.log("Ruaj produktin:", payload);
-        window.alert("Produkti u ruajt. Tash lidhe me service/DB.");
-        setProductForm(emptyProduct());
+        saveMutation.mutate();
     };
 
     return (
         <div className="kpp-shell">
             <div className="kpp-card">
                 <div className="kpp-hero">
-                    <div className="kpp-badge">Shto Produkt</div>
-                    <h1>Shto produkt të kalkulimit</h1>
-                    <p>Kjo është faqja veç për shtim produkti nga sidebar.</p>
+                    <div className="kpp-badge">
+                        {mode === "edit" ? "Ndrysho Produkt" : "Shto Produkt"}
+                    </div>
+                    <h1>
+                        {mode === "edit"
+                            ? "Ndrysho produktin e kalkulimit"
+                            : "Shto produkt të kalkulimit"}
+                    </h1>
+                    <p>Kjo faqe ruan produktin direkt në databazë.</p>
                 </div>
 
                 <div className="kpp-grid">
@@ -141,8 +203,24 @@ export default function KalkuloProductPage() {
                 </div>
 
                 <div className="kpp-actions">
-                    <button className="kpp-btn kpp-btn-primary" onClick={handleSave}>
-                        Ruaj produktin
+                    <button
+                        className="kpp-btn kpp-btn-secondary"
+                        onClick={() => navigate("/kalkulo")}
+                        disabled={saveMutation.isPending}
+                    >
+                        Anulo
+                    </button>
+
+                    <button
+                        className="kpp-btn kpp-btn-primary"
+                        onClick={handleSave}
+                        disabled={saveMutation.isPending}
+                    >
+                        {saveMutation.isPending
+                            ? "Duke ruajtur..."
+                            : mode === "edit"
+                                ? "Ruaj ndryshimet"
+                                : "Ruaj produktin"}
                     </button>
                 </div>
             </div>
@@ -253,6 +331,12 @@ export default function KalkuloProductPage() {
         .kpp-btn-primary {
           color: white;
           background: linear-gradient(135deg, #2563eb, #3b82f6);
+        }
+
+        .kpp-btn-secondary {
+          color: white;
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         @media (max-width: 820px) {
