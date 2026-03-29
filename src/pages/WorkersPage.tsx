@@ -256,7 +256,7 @@ export function WorkersPage() {
         });
     }
 
-    async function handleDeleteWorker(worker: Worker) {
+    function handleDeleteWorker(worker: Worker) {
         const payrollRows = payrollData[worker.id] ?? [];
         const message = payrollRows.length
             ? `Punëtori "${worker.fullName}" ka ${payrollRows.length} rroga të regjistruara. Nëse vazhdon, do të fshihen edhe rrogat e tij. A don me vazhdu?`
@@ -266,7 +266,7 @@ export function WorkersPage() {
         deleteWorkerMutation.mutate(worker.id);
     }
 
-    async function handleExportAll() {
+    async function handleExportAllPreview() {
         await exportPayrollPdfAll({
             workers,
             payrollByWorker: payrollData,
@@ -274,71 +274,100 @@ export function WorkersPage() {
         });
     }
 
+    async function handleExportAllSave() {
+        await exportPayrollPdfAll({
+            workers,
+            payrollByWorker: payrollData,
+            advancesByWorker: advancesData,
+            save: true,
+        } as any);
+    }
+
     if (workersLoading) {
         return (
-            <div className="card">
-                <p>Duke i ngarkuar punëtorët...</p>
-            </div>
+            <>
+                <WorkersPremiumStyles />
+                <div className="wp-page">
+                    <div className="wp-card">
+                        <p>Duke i ngarkuar punëtorët...</p>
+                    </div>
+                </div>
+            </>
         );
     }
 
     return (
         <>
-            <div className="stack-lg">
-                <div className="row-between" style={{ gap: 12, flexWrap: "wrap" }}>
+            <WorkersPremiumStyles />
+
+            <div className="wp-page">
+                <div className="wp-hero">
                     <div>
-                        <h2 style={{ margin: 0 }}>Evidenca e Punëtorëve</h2>
-                        <p style={{ marginTop: 6, color: "#94a3b8" }}>
+                        <div className="wp-kicker">MENAXHIMI I PUNËTORËVE</div>
+                        <h2 className="wp-title">Evidenca e Punëtorëve</h2>
+                        <p className="wp-subtitle">
                             Rroga mujore, avansa, ditë pune dhe raportet PDF.
                         </p>
                     </div>
 
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <div className="wp-actions">
                         <button
-                            className="button"
-                            onClick={handleExportAll}
+                            className="wp-btn wp-btn-secondary"
+                            onClick={handleExportAllPreview}
                             disabled={workers.length === 0}
                         >
-                            PDF (krejt)
+                            Preview PDF (krejt)
                         </button>
-                        <button className="button primary" onClick={() => setShowAddWorker(true)}>
+
+                        <button
+                            className="wp-btn wp-btn-secondary"
+                            onClick={handleExportAllSave}
+                            disabled={workers.length === 0}
+                        >
+                            Save PDF (krejt)
+                        </button>
+
+                        <button
+                            className="wp-btn wp-btn-primary"
+                            onClick={() => setShowAddWorker(true)}
+                        >
                             Shto punëtor
                         </button>
                     </div>
                 </div>
 
-                <div className="stats-grid">
-                    <div className="card stat-card">
-                        <span className="stat-title">Totali bruto</span>
-                        <div className="stat-value">{eur(totalGrossAll)}</div>
+                <div className="wp-stats-grid">
+                    <div className="wp-stat-card">
+                        <span className="wp-stat-label">Totali bruto</span>
+                        <div className="wp-stat-value">{eur(totalGrossAll)}</div>
                     </div>
-                    <div className="card stat-card">
-                        <span className="stat-title">Totali neto</span>
-                        <div className="stat-value">{eur(totalNetAll)}</div>
+                    <div className="wp-stat-card">
+                        <span className="wp-stat-label">Totali neto</span>
+                        <div className="wp-stat-value">{eur(totalNetAll)}</div>
                     </div>
-                    <div className="card stat-card">
-                        <span className="stat-title">Kosto firmës</span>
-                        <div className="stat-value">{eur(totalCostAll)}</div>
+                    <div className="wp-stat-card">
+                        <span className="wp-stat-label">Kosto firmës</span>
+                        <div className="wp-stat-value">{eur(totalCostAll)}</div>
                     </div>
-                    <div className="card stat-card">
-                        <span className="stat-title">Avansat</span>
-                        <div className="stat-value">{eur(totalAdvancesAll)}</div>
+                    <div className="wp-stat-card">
+                        <span className="wp-stat-label">Avansat</span>
+                        <div className="wp-stat-value">{eur(totalAdvancesAll)}</div>
                     </div>
                 </div>
 
-                <div className="card">
-                    <div className="row-between">
+                <div className="wp-card wp-worked-summary">
+                    <div className="wp-row-between">
                         <strong>Ditë të punuara</strong>
                         <strong>{totalWorkedDaysAll}</strong>
                     </div>
                 </div>
 
                 {workers.length === 0 ? (
-                    <div className="card">
+                    <div className="wp-card">
                         <p>Nuk ka punëtorë të regjistruar.</p>
                     </div>
                 ) : (
-                    <div className="stack-md">
+                    <div className="wp-worker-list">
                         {workers.map((worker) => {
                             const payrollEntries = payrollData[worker.id] ?? [];
                             const advances = advancesData[worker.id] ?? [];
@@ -347,51 +376,43 @@ export function WorkersPage() {
                             const isExpanded = expandedIds.includes(worker.id);
 
                             return (
-                                <div className="card" key={worker.id}>
-                                    <div className="row-between" style={{ alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
-                                        <div style={{ display: "flex", gap: 14 }}>
-                                            <div
-                                                style={{
-                                                    width: 52,
-                                                    height: 52,
-                                                    borderRadius: 18,
-                                                    display: "grid",
-                                                    placeItems: "center",
-                                                    fontWeight: 900,
-                                                    background: "rgba(34,197,94,.12)",
-                                                    color: "#86efac",
-                                                    flexShrink: 0,
-                                                }}
-                                            >
+                                <div className="wp-card wp-worker-card" key={worker.id}>
+                                    <div className="wp-worker-head">
+                                        <div className="wp-worker-left">
+                                            <div className="wp-avatar">
                                                 {worker.fullName?.[0]?.toUpperCase() ?? "?"}
                                             </div>
 
-                                            <div>
-                                                <div style={{ fontWeight: 800, fontSize: 18 }}>{worker.fullName}</div>
-                                                <div style={{ color: "#94a3b8", marginTop: 4 }}>{worker.position}</div>
-                                                <div style={{ color: "#cbd5e1", marginTop: 8 }}>
+                                            <div className="wp-worker-info">
+                                                <div className="wp-worker-name">{worker.fullName}</div>
+                                                <div className="wp-worker-role">{worker.position}</div>
+                                                <div className="wp-worker-rate">
                                                     Pagesa bazë/ditë: <strong>{eur(worker.baseSalary)}</strong>
                                                 </div>
                                                 {latest ? (
-                                                    <div style={{ color: "#94a3b8", marginTop: 6 }}>
+                                                    <div className="wp-worker-last">
                                                         Rroga e fundit: {monthLabel(latest.month)}
                                                     </div>
                                                 ) : (
-                                                    <div style={{ color: "#94a3b8", marginTop: 6 }}>
+                                                    <div className="wp-worker-last">
                                                         Ende nuk ka rroga të regjistruara
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                            <button className="button" onClick={() => setPayrollWorker(worker)}>
+                                        <div className="wp-btn-group">
+                                            <button
+                                                className="wp-btn wp-btn-secondary"
+                                                onClick={() => setPayrollWorker(worker)}
+                                            >
                                                 {currentMonthEntry ? "Ndrysho rrogën" : "Paguaj tani"}
                                             </button>
+
                                             <button
-                                                className="button"
-                                                onClick={() =>
-                                                    exportPayrollPdfForWorker({
+                                                className="wp-btn wp-btn-secondary"
+                                                onClick={async () =>
+                                                    await exportPayrollPdfForWorker({
                                                         worker,
                                                         payroll: payrollEntries,
                                                         advances,
@@ -399,40 +420,63 @@ export function WorkersPage() {
                                                 }
                                                 disabled={payrollEntries.length === 0}
                                             >
-                                                PDF
+                                                Preview PDF
                                             </button>
-                                            <button className="button" onClick={() => toggleStats(worker.id)}>
+
+                                            <button
+                                                className="wp-btn wp-btn-secondary"
+                                                onClick={async () =>
+                                                    await exportPayrollPdfForWorker({
+                                                        worker,
+                                                        payroll: payrollEntries,
+                                                        advances,
+                                                        save: true,
+                                                    } as any)
+                                                }
+                                                disabled={payrollEntries.length === 0}
+                                            >
+                                                Save PDF
+                                            </button>
+
+                                            <button
+                                                className="wp-btn wp-btn-secondary"
+                                                onClick={() => toggleStats(worker.id)}
+                                            >
                                                 {isExpanded ? "Mbyll statistikat" : "Statistikat"}
                                             </button>
-                                            <button className="button danger" onClick={() => handleDeleteWorker(worker)}>
+
+                                            <button
+                                                className="wp-btn wp-btn-danger"
+                                                onClick={() => handleDeleteWorker(worker)}
+                                            >
                                                 Fshij
                                             </button>
                                         </div>
                                     </div>
 
                                     {isExpanded ? (
-                                        <div style={{ marginTop: 18 }} className="mini-grid">
-                                            <div className="mini-item">
+                                        <div className="wp-mini-grid">
+                                            <div className="wp-mini-item">
                                                 <span>Bruto</span>
                                                 <strong>{eur(grossForWorker(payrollEntries))}</strong>
                                             </div>
-                                            <div className="mini-item">
+                                            <div className="wp-mini-item">
                                                 <span>Neto</span>
                                                 <strong>{eur(netForWorker(payrollEntries))}</strong>
                                             </div>
-                                            <div className="mini-item">
+                                            <div className="wp-mini-item">
                                                 <span>Kosto firmës</span>
                                                 <strong>{eur(costForWorker(payrollEntries))}</strong>
                                             </div>
-                                            <div className="mini-item">
+                                            <div className="wp-mini-item">
                                                 <span>Avansat</span>
                                                 <strong>{eur(sumAdvances(advances))}</strong>
                                             </div>
-                                            <div className="mini-item">
+                                            <div className="wp-mini-item">
                                                 <span>Ditë të punuara</span>
                                                 <strong>{workedDaysForWorker(payrollEntries)}</strong>
                                             </div>
-                                            <div className="mini-item">
+                                            <div className="wp-mini-item">
                                                 <span>Rreshta rroge</span>
                                                 <strong>{payrollEntries.length}</strong>
                                             </div>
@@ -447,31 +491,39 @@ export function WorkersPage() {
 
             {showAddWorker ? (
                 <Modal onClose={() => setShowAddWorker(false)} title="Shto punëtor">
-                    <form className="stack-md" onSubmit={submitAddWorker}>
+                    <form className="wp-form-stack" onSubmit={submitAddWorker}>
                         <input
-                            className="input"
+                            className="wp-input"
                             placeholder="Emri"
                             value={newWorkerName}
                             onChange={(e) => setNewWorkerName(e.target.value)}
                         />
                         <input
-                            className="input"
+                            className="wp-input"
                             placeholder="Pozita"
                             value={newWorkerPosition}
                             onChange={(e) => setNewWorkerPosition(e.target.value)}
                         />
                         <input
-                            className="input"
+                            className="wp-input"
                             type="number"
                             placeholder="Pagesa për ditë (€)"
                             value={newWorkerDailyRate}
                             onChange={(e) => setNewWorkerDailyRate(e.target.value)}
                         />
-                        <div className="row-between" style={{ gap: 10, flexWrap: "wrap" }}>
-                            <button type="button" className="button" onClick={() => setShowAddWorker(false)}>
+                        <div className="wp-modal-actions">
+                            <button
+                                type="button"
+                                className="wp-btn wp-btn-secondary"
+                                onClick={() => setShowAddWorker(false)}
+                            >
                                 Anulo
                             </button>
-                            <button type="submit" className="button primary" disabled={addWorkerMutation.isPending}>
+                            <button
+                                type="submit"
+                                className="wp-btn wp-btn-primary"
+                                disabled={addWorkerMutation.isPending}
+                            >
                                 Ruaj
                             </button>
                         </div>
@@ -504,48 +556,16 @@ function Modal({
     onClose: () => void;
 }) {
     return (
-        <div
-            style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(2,6,23,.72)",
-                display: "grid",
-                placeItems: "center",
-                padding: 20,
-                zIndex: 1000,
-            }}
-            onClick={onClose}
-        >
-            <div
-                className="card"
-                style={{
-                    width: "100%",
-                    maxWidth: 900,
-                    maxHeight: "90vh",
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div
-                    className="row-between"
-                    style={{
-                        marginBottom: 16,
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 2,
-                        background: "rgba(15, 23, 42, 0.96)",
-                        paddingBottom: 12,
-                    }}
-                >
+        <div className="wp-modal-overlay" onClick={onClose}>
+            <div className="wp-modal-card" onClick={(e) => e.stopPropagation()}>
+                <div className="wp-modal-header">
                     <h3 style={{ margin: 0 }}>{title}</h3>
-                    <button className="button" onClick={onClose}>
+                    <button className="wp-btn wp-btn-secondary" onClick={onClose}>
                         Mbyll
                     </button>
                 </div>
 
-                <div style={{ overflowY: "auto", paddingRight: 4 }}>{children}</div>
+                <div className="wp-modal-body">{children}</div>
             </div>
         </div>
     );
@@ -647,13 +667,12 @@ function PayrollEditorModal({
     return (
         <>
             <Modal title={`Rroga mujore - ${worker.fullName}`} onClose={onClose}>
-                <div className="stack-lg">
-                    <div className="row-between" style={{ gap: 12, flexWrap: "wrap" }}>
+                <div className="wp-form-stack">
+                    <div className="wp-select-row">
                         <select
-                            className="input"
+                            className="wp-input"
                             value={month}
                             onChange={(e) => setMonth(Number(e.target.value))}
-                            style={{ maxWidth: 220 }}
                         >
                             {MONTH_NAMES.map((m, i) => (
                                 <option key={m} value={i + 1}>
@@ -663,71 +682,52 @@ function PayrollEditorModal({
                         </select>
 
                         <input
-                            className="input"
+                            className="wp-input"
                             type="number"
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            style={{ maxWidth: 160 }}
                         />
                     </div>
 
-                    <div className="form-grid">
+                    <div className="wp-form-grid">
                         <input
-                            className="input"
+                            className="wp-input"
                             type="number"
                             placeholder="Pagesa për ditë (€)"
                             value={dailyRate}
                             onChange={(e) => setDailyRate(e.target.value)}
                         />
                         <input
-                            className="input"
+                            className="wp-input"
                             type="number"
                             placeholder="Kontribut punëtori (%)"
                             value={employeePct}
                             onChange={(e) => setEmployeePct(e.target.value)}
                         />
                         <input
-                            className="input"
+                            className="wp-input"
                             type="number"
                             placeholder="Kontribut firma (%)"
                             value={employerPct}
                             onChange={(e) => setEmployerPct(e.target.value)}
                         />
                         <input
-                            className="input"
+                            className="wp-input"
                             placeholder="Shënim"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                         />
                     </div>
 
-                    <div className="card" style={{ padding: 16 }}>
-                        <h3 style={{ marginTop: 0 }}>Kalendar i punës - {monthLabel(ym)}</h3>
-                        <p style={{ color: "#94a3b8" }}>
+                    <div className="wp-card wp-calendar-wrap">
+                        <h3 className="wp-section-title">Kalendar i punës - {monthLabel(ym)}</h3>
+                        <p className="wp-hint">
                             Kliko ditët që ka punu punëtori. Double click hap avansin për atë ditë.
                         </p>
 
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-                                gap: 8,
-                                marginTop: 14,
-                            }}
-                        >
+                        <div className="wp-calendar-grid">
                             {["HËN", "MAR", "MËR", "ENJ", "PRE", "SHT", "DIE"].map((x) => (
-                                <div
-                                    key={x}
-                                    style={{
-                                        textAlign: "center",
-                                        padding: "10px 8px",
-                                        borderRadius: 12,
-                                        background: "rgba(255,255,255,.04)",
-                                        color: "#94a3b8",
-                                        fontWeight: 700,
-                                        fontSize: 12,
-                                    }}
-                                >
+                                <div key={x} className="wp-calendar-head">
                                     {x}
                                 </div>
                             ))}
@@ -745,40 +745,24 @@ function PayrollEditorModal({
                                 const advanceTotal = sumAdvances(dayAdvances);
                                 const sunday = isSunday(day);
 
+                                let className = "wp-day-btn";
+                                if (sunday) className += " is-sunday";
+                                else if (advanceTotal > 0 && selected) className += " has-advance-selected";
+                                else if (advanceTotal > 0) className += " has-advance";
+                                else if (selected) className += " is-selected";
+
                                 return (
                                     <button
                                         key={i + 1}
                                         type="button"
                                         onClick={() => toggleDay(day)}
                                         onDoubleClick={() => setSelectedAdvanceDay(day)}
-                                        style={{
-                                            minHeight: 72,
-                                            borderRadius: 14,
-                                            border: `1px solid ${sunday
-                                                ? "rgba(239,68,68,.3)"
-                                                : advanceTotal > 0
-                                                    ? "rgba(251,191,36,.5)"
-                                                    : selected
-                                                        ? "rgba(34,197,94,.45)"
-                                                        : "rgba(255,255,255,.08)"
-                                                }`,
-                                            background: sunday
-                                                ? "rgba(239,68,68,.08)"
-                                                : advanceTotal > 0 && !selected
-                                                    ? "rgba(239,68,68,.10)"
-                                                    : advanceTotal > 0 && selected
-                                                        ? "rgba(251,191,36,.12)"
-                                                        : selected
-                                                            ? "rgba(34,197,94,.14)"
-                                                            : "rgba(255,255,255,.03)",
-                                            color: "#fff",
-                                            cursor: sunday ? "not-allowed" : "pointer",
-                                        }}
+                                        className={className}
                                         disabled={sunday}
                                         title="Double click për avans"
                                     >
-                                        <div style={{ fontWeight: 800 }}>{i + 1}</div>
-                                        <div style={{ fontSize: 11, marginTop: 4, color: "#cbd5e1" }}>
+                                        <div className="wp-day-number">{i + 1}</div>
+                                        <div className="wp-day-sub">
                                             {advanceTotal > 0 ? eur(advanceTotal) : selected ? "Punë" : "—"}
                                         </div>
                                     </button>
@@ -787,49 +771,40 @@ function PayrollEditorModal({
                         </div>
                     </div>
 
-                    <div className="mini-grid">
-                        <div className="mini-item">
+                    <div className="wp-mini-grid">
+                        <div className="wp-mini-item">
                             <span>Ditë të punuara</span>
                             <strong>{workedCount}</strong>
                         </div>
-                        <div className="mini-item">
+                        <div className="wp-mini-item">
                             <span>Bruto</span>
                             <strong>{eur(gross)}</strong>
                         </div>
-                        <div className="mini-item">
+                        <div className="wp-mini-item">
                             <span>Neto</span>
                             <strong>{eur(net)}</strong>
                         </div>
-                        <div className="mini-item">
+                        <div className="wp-mini-item">
                             <span>Kosto firmës</span>
                             <strong>{eur(cost)}</strong>
                         </div>
-                        <div className="mini-item">
+                        <div className="wp-mini-item">
                             <span>Avansat e muajit</span>
                             <strong>{eur(monthAdvanceTotal)}</strong>
                         </div>
-                        <div className="mini-item">
+                        <div className="wp-mini-item">
                             <span>I mbesin me marrë</span>
                             <strong>{eur(remaining)}</strong>
                         </div>
                     </div>
 
-                    <div
-                        style={{
-                            position: "sticky",
-                            bottom: 0,
-                            zIndex: 3,
-                            background: "rgba(15, 23, 42, 0.96)",
-                            paddingTop: 12,
-                            paddingBottom: 4,
-                        }}
-                    >
-                        <div className="row-between" style={{ gap: 10, flexWrap: "wrap" }}>
-                            <button className="button" onClick={onClose}>
+                    <div className="wp-sticky-footer">
+                        <div className="wp-modal-actions">
+                            <button className="wp-btn wp-btn-secondary" onClick={onClose}>
                                 Anulo
                             </button>
                             <button
-                                className="button primary"
+                                className="wp-btn wp-btn-primary"
                                 onClick={savePayroll}
                                 disabled={saveMutation.isPending}
                             >
@@ -915,28 +890,24 @@ function AdvanceDayModal({
 
     return (
         <Modal title={`Avansë për ${dayLabel}`} onClose={onClose}>
-            <div className="stack-lg">
-                <div className="card" style={{ padding: 14 }}>
+            <div className="wp-form-stack">
+                <div className="wp-card">
                     <strong>Gjithsej për këtë ditë: {eur(sumAdvances(dayItems))}</strong>
                 </div>
 
-                <div className="stack-md">
+                <div className="wp-form-stack">
                     {dayItems.length === 0 ? (
-                        <div className="card" style={{ padding: 14 }}>
-                            Nuk ka avansë për këtë ditë.
-                        </div>
+                        <div className="wp-card">Nuk ka avansë për këtë ditë.</div>
                     ) : (
                         dayItems.map((item) => (
-                            <div key={item.id} className="card" style={{ padding: 14 }}>
-                                <div className="row-between">
+                            <div key={item.id} className="wp-card">
+                                <div className="wp-row-between">
                                     <div>
-                                        <div style={{ fontWeight: 800 }}>{eur(item.amount)}</div>
-                                        <div style={{ color: "#94a3b8", marginTop: 4 }}>
-                                            {item.note || "Pa shënim"}
-                                        </div>
+                                        <div className="wp-advance-amount">{eur(item.amount)}</div>
+                                        <div className="wp-advance-note">{item.note || "Pa shënim"}</div>
                                     </div>
                                     <button
-                                        className="button danger"
+                                        className="wp-btn wp-btn-danger"
                                         onClick={() => deleteAdvanceMutation.mutate(item.id)}
                                     >
                                         Fshij
@@ -947,30 +918,487 @@ function AdvanceDayModal({
                     )}
                 </div>
 
-                <form className="stack-md" onSubmit={submitAdvance}>
+                <form className="wp-form-stack" onSubmit={submitAdvance}>
                     <input
-                        className="input"
+                        className="wp-input"
                         type="number"
                         placeholder="Shuma e avansës (€)"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                     />
                     <input
-                        className="input"
+                        className="wp-input"
                         placeholder="Shënim"
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                     />
-                    <div className="row-between" style={{ gap: 10, flexWrap: "wrap" }}>
-                        <button type="button" className="button" onClick={onClose}>
+                    <div className="wp-modal-actions">
+                        <button type="button" className="wp-btn wp-btn-secondary" onClick={onClose}>
                             Mbyll
                         </button>
-                        <button className="button primary" type="submit">
+                        <button className="wp-btn wp-btn-primary" type="submit">
                             Shto avans
                         </button>
                     </div>
                 </form>
             </div>
         </Modal>
+    );
+}
+
+function WorkersPremiumStyles() {
+    return (
+        <style>{`
+      .wp-page{
+        display:flex;
+        flex-direction:column;
+        gap:18px;
+        padding:18px;
+      }
+
+      .wp-hero{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:16px;
+        padding:20px;
+        border-radius:26px;
+        background:
+          radial-gradient(circle at top right, rgba(34,197,94,.18), transparent 28%),
+          radial-gradient(circle at top left, rgba(59,130,246,.15), transparent 35%),
+          linear-gradient(145deg, rgba(15,23,42,.96), rgba(30,41,59,.92));
+        border:1px solid rgba(255,255,255,.08);
+        box-shadow:0 16px 40px rgba(0,0,0,.30);
+      }
+
+      .wp-kicker{
+        color:#86efac;
+        font-size:12px;
+        font-weight:800;
+        letter-spacing:.16em;
+        margin-bottom:8px;
+      }
+
+      .wp-title{
+        margin:0;
+        color:#f8fafc;
+        font-size:32px;
+        line-height:1.1;
+        font-weight:900;
+      }
+
+      .wp-subtitle{
+        margin:10px 0 0;
+        color:#94a3b8;
+        max-width:700px;
+        line-height:1.6;
+      }
+
+      .wp-actions{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+      }
+
+      .wp-card,
+      .wp-stat-card,
+      .wp-mini-item{
+        border-radius:22px;
+        background:linear-gradient(145deg, rgba(30,41,59,.90), rgba(15,23,42,.92));
+        border:1px solid rgba(255,255,255,.07);
+        box-shadow:0 12px 28px rgba(0,0,0,.22);
+        backdrop-filter:blur(8px);
+      }
+
+      .wp-card{
+        padding:16px;
+      }
+
+      .wp-stats-grid{
+        display:grid;
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+        gap:14px;
+      }
+
+      .wp-stat-card{
+        padding:18px;
+      }
+
+      .wp-stat-label{
+        display:block;
+        color:#94a3b8;
+        font-size:13px;
+        margin-bottom:10px;
+      }
+
+      .wp-stat-value{
+        font-size:24px;
+        font-weight:900;
+        color:#f8fafc;
+        letter-spacing:-0.02em;
+      }
+
+      .wp-worked-summary{
+        padding:16px 18px;
+      }
+
+      .wp-row-between{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+      }
+
+      .wp-worker-list{
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+      }
+
+      .wp-worker-card{
+        padding:18px;
+      }
+
+      .wp-worker-head{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:16px;
+        flex-wrap:wrap;
+      }
+
+      .wp-worker-left{
+        display:flex;
+        gap:14px;
+        min-width:0;
+        flex:1;
+      }
+
+      .wp-avatar{
+        width:58px;
+        height:58px;
+        border-radius:18px;
+        display:grid;
+        place-items:center;
+        font-weight:900;
+        font-size:20px;
+        color:#dcfce7;
+        background:linear-gradient(135deg, rgba(34,197,94,.22), rgba(16,185,129,.15));
+        border:1px solid rgba(34,197,94,.28);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+        flex-shrink:0;
+      }
+
+      .wp-worker-info{
+        min-width:0;
+      }
+
+      .wp-worker-name{
+        font-size:20px;
+        font-weight:900;
+        color:#f8fafc;
+        line-height:1.2;
+      }
+
+      .wp-worker-role{
+        color:#94a3b8;
+        margin-top:4px;
+      }
+
+      .wp-worker-rate{
+        color:#dbeafe;
+        margin-top:8px;
+      }
+
+      .wp-worker-last{
+        color:#94a3b8;
+        margin-top:6px;
+        font-size:13px;
+      }
+
+      .wp-btn-group{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        justify-content:flex-end;
+      }
+
+      .wp-btn{
+        appearance:none;
+        border:none;
+        cursor:pointer;
+        border-radius:14px;
+        padding:12px 16px;
+        font-weight:800;
+        transition:.2s ease;
+      }
+
+      .wp-btn:hover{
+        transform:translateY(-1px);
+      }
+
+      .wp-btn:disabled{
+        opacity:.55;
+        cursor:not-allowed;
+        transform:none;
+      }
+
+      .wp-btn-primary{
+        color:#052e16;
+        background:linear-gradient(135deg,#86efac,#22c55e);
+        box-shadow:0 8px 22px rgba(34,197,94,.28);
+      }
+
+      .wp-btn-secondary{
+        color:#e2e8f0;
+        background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.08);
+      }
+
+      .wp-btn-danger{
+        color:#fff;
+        background:linear-gradient(135deg,#ef4444,#dc2626);
+        box-shadow:0 8px 22px rgba(239,68,68,.25);
+      }
+
+      .wp-mini-grid{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:12px;
+        margin-top:16px;
+      }
+
+      .wp-mini-item{
+        padding:14px;
+      }
+
+      .wp-mini-item span{
+        display:block;
+        color:#94a3b8;
+        font-size:12px;
+        margin-bottom:8px;
+      }
+
+      .wp-mini-item strong{
+        color:#f8fafc;
+        font-size:18px;
+      }
+
+      .wp-form-stack{
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+      }
+
+      .wp-form-grid{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:12px;
+      }
+
+      .wp-select-row{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+      }
+
+      .wp-input{
+        width:100%;
+        border-radius:16px;
+        border:1px solid rgba(255,255,255,.09);
+        background:rgba(15,23,42,.88);
+        color:#f8fafc;
+        padding:14px 16px;
+        outline:none;
+      }
+
+      .wp-input::placeholder{
+        color:#64748b;
+      }
+
+      .wp-modal-overlay{
+        position:fixed;
+        inset:0;
+        background:rgba(2,6,23,.7);
+        backdrop-filter:blur(8px);
+        display:grid;
+        place-items:center;
+        padding:18px;
+        z-index:1000;
+      }
+
+      .wp-modal-card{
+        width:min(980px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:24px;
+        background:linear-gradient(145deg, rgba(30,41,59,.98), rgba(15,23,42,.98));
+        border:1px solid rgba(255,255,255,.08);
+        box-shadow:0 18px 40px rgba(0,0,0,.35);
+      }
+
+      .wp-modal-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:18px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+
+      .wp-modal-body{
+        padding:18px;
+      }
+
+      .wp-modal-actions{
+        display:flex;
+        gap:10px;
+        justify-content:flex-end;
+        flex-wrap:wrap;
+      }
+
+      .wp-calendar-wrap{
+        padding:16px;
+      }
+
+      .wp-section-title{
+        margin:0 0 8px;
+        color:#f8fafc;
+      }
+
+      .wp-hint{
+        margin:0 0 14px;
+        color:#94a3b8;
+        font-size:13px;
+      }
+
+      .wp-calendar-grid{
+        display:grid;
+        grid-template-columns:repeat(7,minmax(0,1fr));
+        gap:8px;
+      }
+
+      .wp-calendar-head{
+        color:#94a3b8;
+        font-size:12px;
+        text-align:center;
+        padding:6px 0;
+        font-weight:700;
+      }
+
+      .wp-day-btn{
+        min-height:72px;
+        border-radius:14px;
+        border:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.04);
+        color:#e2e8f0;
+        cursor:pointer;
+        padding:10px 8px;
+      }
+
+      .wp-day-btn.is-selected{
+        background:rgba(34,197,94,.18);
+        border-color:rgba(34,197,94,.38);
+      }
+
+      .wp-day-btn.has-advance{
+        background:rgba(59,130,246,.16);
+        border-color:rgba(59,130,246,.34);
+      }
+
+      .wp-day-btn.has-advance-selected{
+        background:linear-gradient(135deg, rgba(34,197,94,.22), rgba(59,130,246,.20));
+        border-color:rgba(255,255,255,.18);
+      }
+
+      .wp-day-btn.is-sunday{
+        opacity:.45;
+        cursor:not-allowed;
+      }
+
+      .wp-day-number{
+        font-weight:900;
+        font-size:16px;
+      }
+
+      .wp-day-sub{
+        margin-top:6px;
+        font-size:12px;
+        color:#cbd5e1;
+      }
+
+      .wp-sticky-footer{
+        position:sticky;
+        bottom:0;
+        padding-top:8px;
+        background:linear-gradient(to top, rgba(15,23,42,1), rgba(15,23,42,.75), transparent);
+      }
+
+      .wp-advance-amount{
+        color:#f8fafc;
+        font-size:18px;
+        font-weight:900;
+      }
+
+      .wp-advance-note{
+        color:#94a3b8;
+        margin-top:4px;
+      }
+
+      @media (max-width: 980px){
+        .wp-stats-grid,
+        .wp-mini-grid,
+        .wp-form-grid{
+          grid-template-columns:repeat(2,minmax(0,1fr));
+        }
+      }
+
+      @media (max-width: 720px){
+        .wp-page{
+          padding:14px;
+        }
+
+        .wp-hero{
+          padding:16px;
+          border-radius:22px;
+        }
+
+        .wp-title{
+          font-size:26px;
+        }
+
+        .wp-stats-grid,
+        .wp-mini-grid,
+        .wp-form-grid,
+        .wp-select-row{
+          grid-template-columns:1fr;
+        }
+
+        .wp-worker-head{
+          flex-direction:column;
+        }
+
+        .wp-btn-group,
+        .wp-actions,
+        .wp-modal-actions{
+          width:100%;
+          justify-content:stretch;
+        }
+
+        .wp-btn{
+          width:100%;
+        }
+
+        .wp-calendar-grid{
+          gap:6px;
+        }
+
+        .wp-day-btn{
+          min-height:64px;
+          padding:8px 6px;
+        }
+      }
+    `}</style>
     );
 }
