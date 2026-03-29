@@ -13,10 +13,15 @@ import { db } from "../firebase/config";
 import { getOwnerId } from "../lib/auth";
 import type { Worker } from "../types";
 
-export async function getWorkers(): Promise<Worker[]> {
-    const ownerId = getOwnerId();
+export type CreateWorkerPayload = Omit<
+    Worker,
+    "id" | "createdAt" | "updatedAt" | "ownerId"
+>;
 
-    const ref = collection(db, "owners", ownerId, "workers");
+export async function getWorkers(): Promise<Worker[]> {
+    const uid = getOwnerId();
+
+    const ref = collection(db, "owners", uid, "workers");
     const q = query(ref, orderBy("fullName", "asc"));
     const snap = await getDocs(q);
 
@@ -27,28 +32,31 @@ export async function getWorkers(): Promise<Worker[]> {
 }
 
 export async function createWorker(
-    payload: Omit<Worker, "id" | "createdAt" | "updatedAt">
-) {
-    const ownerId = getOwnerId();
+    payload: CreateWorkerPayload
+): Promise<void> {
+    const uid = getOwnerId();
 
-    await addDoc(collection(db, "owners", ownerId, "workers"), {
+    await addDoc(collection(db, "owners", uid, "workers"), {
         ...payload,
+        ownerId: uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
 }
 
-export async function updateWorker(id: string, payload: Partial<Worker>) {
-    const ownerId = getOwnerId();
+export async function updateWorker(
+    id: string,
+    payload: Partial<CreateWorkerPayload>
+): Promise<void> {
+    const uid = getOwnerId();
 
-    await updateDoc(doc(db, "owners", ownerId, "workers", id), {
+    await updateDoc(doc(db, "owners", uid, "workers", id), {
         ...payload,
         updatedAt: serverTimestamp(),
     });
 }
 
-export async function removeWorker(id: string) {
-    const ownerId = getOwnerId();
-
-    await deleteDoc(doc(db, "owners", ownerId, "workers", id));
+export async function removeWorker(id: string): Promise<void> {
+    const uid = getOwnerId();
+    await deleteDoc(doc(db, "owners", uid, "workers", id));
 }
