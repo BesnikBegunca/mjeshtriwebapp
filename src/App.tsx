@@ -27,7 +27,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/kalkulo" element={<KalkuloPage />} />
-        <Route path="/kalkulo/produkt" element={<KalkuloProductPage />} />
+        <Route path="/kalkulo/shto-produkt" element={<KalkuloProductPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/qmimorja" element={<QmimorjaPage />} />
         <Route path="/parameters" element={<ParametersPage />} />

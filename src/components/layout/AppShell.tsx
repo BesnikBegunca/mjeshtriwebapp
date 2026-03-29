@@ -5,12 +5,14 @@ import {
     Settings,
     Users,
     WalletCards,
+    PackagePlus,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/kalkulo", label: "Kalkulo", icon: Calculator },
+    { to: "/kalkulo/shto-produkt", label: "Shto Produkt", icon: PackagePlus },
     { to: "/workers", label: "Punëtorët", icon: Users },
     { to: "/qmimorja", label: "Qmimorja", icon: WalletCards },
     { to: "/parameters", label: "Parametrat", icon: Settings },
@@ -34,9 +36,7 @@ export function AppShell() {
                         <NavLink
                             key={to}
                             to={to}
-                            className={({ isActive }) =>
-                                `nav-link ${isActive ? "active" : ""}`
-                            }
+                            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
                         >
                             <Icon size={18} />
                             <span>{label}</span>

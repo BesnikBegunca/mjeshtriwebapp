@@ -1,8 +1,5 @@
-import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import type { ProductCalcItem } from "../types";
-
-type Mode = "create" | "edit";
 
 function safeNumber(value: string | number): number {
     const parsed = Number(value);
@@ -23,31 +20,8 @@ function emptyProduct(): ProductCalcItem {
     };
 }
 
-type LocationState = {
-    mode?: Mode;
-    product?: ProductCalcItem;
-};
-
 export default function KalkuloProductPage() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const state = (location.state as LocationState | null) ?? null;
-
-    const mode: Mode = state?.mode === "edit" ? "edit" : "create";
-
-    const initialProduct = useMemo(() => {
-        if (mode === "edit" && state?.product) {
-            return {
-                ...state.product,
-                sasiaPer100m2: safeNumber(state.product.sasiaPer100m2),
-                vleraPer100m2: safeNumber(state.product.vleraPer100m2),
-                tvshPer100m2: safeNumber(state.product.tvshPer100m2),
-            };
-        }
-        return emptyProduct();
-    }, [mode, state]);
-
-    const [productForm, setProductForm] = useState<ProductCalcItem>(initialProduct);
+    const [productForm, setProductForm] = useState<ProductCalcItem>(emptyProduct());
 
     const handleProductFormChange = <K extends keyof ProductCalcItem>(
         key: K,
@@ -60,12 +34,7 @@ export default function KalkuloProductPage() {
     };
 
     const handleSave = () => {
-        const kodi = String(productForm.kodi ?? "").trim();
         const emertimi = String(productForm.emertimi ?? "").trim();
-        const pako = String(productForm.pako ?? "").trim();
-        const sasiaPer100m2 = safeNumber(productForm.sasiaPer100m2);
-        const vleraPer100m2 = safeNumber(productForm.vleraPer100m2);
-        const tvshPer100m2 = safeNumber(productForm.tvshPer100m2);
 
         if (!emertimi) {
             window.alert("Shkruaje emërtimin e produktit.");
@@ -73,41 +42,28 @@ export default function KalkuloProductPage() {
         }
 
         const payload: ProductCalcItem = {
-            id: mode === "edit" ? productForm.id : `local-${Date.now()}`,
-            kodi,
+            id: `local-${Date.now()}`,
+            kodi: String(productForm.kodi ?? "").trim(),
             emertimi,
-            pako,
-            sasiaPer100m2,
-            vleraPer100m2,
-            tvshPer100m2,
-            ownerId: productForm.ownerId ?? "",
+            pako: String(productForm.pako ?? "").trim(),
+            sasiaPer100m2: safeNumber(productForm.sasiaPer100m2),
+            vleraPer100m2: safeNumber(productForm.vleraPer100m2),
+            tvshPer100m2: safeNumber(productForm.tvshPer100m2),
+            ownerId: "",
         };
 
-        navigate("/kalkulo", {
-            state: {
-                productAction: mode,
-                product: payload,
-            },
-        });
+        console.log("Ruaj produktin:", payload);
+        window.alert("Produkti u ruajt. Tash lidhe me service/DB.");
+        setProductForm(emptyProduct());
     };
 
     return (
         <div className="kpp-shell">
-            <div className="kpp-page-head">
-                <button className="kpp-back-btn" onClick={() => navigate("/kalkulo")}>
-                    ← Kthehu te Kalkulo
-                </button>
-            </div>
-
             <div className="kpp-card">
                 <div className="kpp-hero">
-                    <div>
-                        <div className="kpp-badge">{mode === "edit" ? "Ndrysho" : "Shto"}</div>
-                        <h1>{mode === "edit" ? "Ndrysho produktin" : "Shto produkt të kalkulimit"}</h1>
-                        <p>
-                            Page e veçantë për produktin, që Kalkulo të mbetet ma clean dhe pa rrëmujë.
-                        </p>
-                    </div>
+                    <div className="kpp-badge">Shto Produkt</div>
+                    <h1>Shto produkt të kalkulimit</h1>
+                    <p>Kjo është faqja veç për shtim produkti nga sidebar.</p>
                 </div>
 
                 <div className="kpp-grid">
@@ -185,12 +141,8 @@ export default function KalkuloProductPage() {
                 </div>
 
                 <div className="kpp-actions">
-                    <button className="kpp-btn kpp-btn-secondary" onClick={() => navigate("/kalkulo")}>
-                        Anulo
-                    </button>
-
                     <button className="kpp-btn kpp-btn-primary" onClick={handleSave}>
-                        {mode === "edit" ? "Ruaj ndryshimet" : "Ruaj produktin"}
+                        Ruaj produktin
                     </button>
                 </div>
             </div>
@@ -201,22 +153,6 @@ export default function KalkuloProductPage() {
           flex-direction: column;
           gap: 18px;
           padding-bottom: 24px;
-        }
-
-        .kpp-page-head {
-          display: flex;
-          align-items: center;
-        }
-
-        .kpp-back-btn {
-          min-height: 42px;
-          padding: 0 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.05);
-          color: white;
-          font-weight: 800;
-          cursor: pointer;
         }
 
         .kpp-card {
@@ -317,12 +253,6 @@ export default function KalkuloProductPage() {
         .kpp-btn-primary {
           color: white;
           background: linear-gradient(135deg, #2563eb, #3b82f6);
-        }
-
-        .kpp-btn-secondary {
-          color: white;
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.08);
         }
 
         @media (max-width: 820px) {

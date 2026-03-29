@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { eur } from "../lib/money";
 import {
@@ -21,9 +20,6 @@ function toMessage(error: unknown): string {
 }
 
 export function KalkuloPage() {
-    const navigate = useNavigate();
-    const location = useLocation();
-
     const [m2, setM2] = useState("100");
     const [includePaint, setIncludePaint] = useState(true);
     const [useFixedLabor, setUseFixedLabor] = useState(false);
@@ -57,38 +53,6 @@ export function KalkuloPage() {
         "local-1",
         "local-2",
     ]);
-
-    useEffect(() => {
-        const navState = location.state as
-            | {
-                productAction?: "create" | "edit";
-                product?: ProductCalcItem;
-            }
-            | undefined;
-
-        if (!navState?.productAction || !navState.product) return;
-
-        if (navState.productAction === "create") {
-            setCustomProducts((prev) => {
-                const exists = prev.some((p) => p.id === navState.product!.id);
-                if (exists) return prev;
-                return [...prev, navState.product!];
-            });
-
-            setSelectedProductIds((prev) => {
-                if (prev.includes(navState.product!.id)) return prev;
-                return [...prev, navState.product!.id];
-            });
-        }
-
-        if (navState.productAction === "edit") {
-            setCustomProducts((prev) =>
-                prev.map((item) => (item.id === navState.product!.id ? navState.product! : item))
-            );
-        }
-
-        navigate(location.pathname, { replace: true, state: null });
-    }, [location.state, location.pathname, navigate]);
 
     const {
         data: parameters,
@@ -227,43 +191,6 @@ export function KalkuloPage() {
         );
     };
 
-    const handleAddProductPage = () => {
-        navigate("/kalkulo/produkt", {
-            state: {
-                mode: "create",
-            },
-        });
-    };
-
-    const handleEditSelectedProduct = () => {
-        if (selectedProducts.length !== 1) {
-            window.alert("Për ndryshim, zgjedhe vetëm një produkt.");
-            return;
-        }
-
-        navigate("/kalkulo/produkt", {
-            state: {
-                mode: "edit",
-                product: selectedProducts[0],
-            },
-        });
-    };
-
-    const handleDeleteSelectedProducts = () => {
-        if (selectedProductIds.length === 0) {
-            window.alert("Zgjedh së paku një produkt për fshirje.");
-            return;
-        }
-
-        const confirmed = window.confirm("A je i sigurt që don me i fshi produktet e zgjedhura?");
-        if (!confirmed) return;
-
-        setCustomProducts((prev) => prev.filter((p) => !selectedProductIds.includes(p.id)));
-        setSelectedProductIds([]);
-    };
-
-    const selectedCount = selectedProductIds.length;
-
     if (pageState === "error") {
         return (
             <div className="kalkulo-shell">
@@ -364,8 +291,8 @@ export function KalkuloPage() {
 
                     <h1 className="kp-title">Kalkulo profesionale</h1>
                     <p className="kp-subtitle">
-                        Llogarit materialin, TVSH-në, punën dore dhe ngjyrën. Produktet tash
-                        shfaqen si listë e thjeshtë me checkbox për UX ma clean.
+                        Llogarit materialin, TVSH-në, punën dore dhe ngjyrën. Produktet këtu
+                        shfaqen vetëm si listë me checkbox.
                     </p>
                 </div>
 
@@ -494,29 +421,8 @@ export function KalkuloPage() {
                     <div className="kp-card kp-panel">
                         <div className="kp-section-head">
                             <div>
-                                <h3>Lista e produkteve</h3>
-                                <p>Veç listë me checkbox, pa shumë rrëmujë vizuale.</p>
-                            </div>
-
-                            <button className="kp-btn kp-btn-primary" onClick={handleAddProductPage}>
-                                + Shto produkt
-                            </button>
-                        </div>
-
-                        <div className="kp-toolbar">
-                            <div className="kp-toolbar-info">
-                                {selectedCount === 0
-                                    ? "Asnjë produkt i zgjedhur"
-                                    : `${selectedCount} produkt(e) të zgjedhura`}
-                            </div>
-
-                            <div className="kp-toolbar-actions">
-                                <button className="kp-btn kp-btn-secondary" onClick={handleEditSelectedProduct}>
-                                    Ndrysho
-                                </button>
-                                <button className="kp-btn kp-btn-danger-soft" onClick={handleDeleteSelectedProducts}>
-                                    Fshij
-                                </button>
+                                <h3>Produktet për kalkulim</h3>
+                                <p>Zgjedh produktet që do me i përfshi në kalkulim.</p>
                             </div>
                         </div>
 
@@ -526,7 +432,10 @@ export function KalkuloPage() {
                                     const checked = selectedProductIds.includes(item.id);
 
                                     return (
-                                        <label key={item.id} className={`kp-check-row ${checked ? "is-checked" : ""}`}>
+                                        <label
+                                            key={item.id}
+                                            className={`kp-check-row ${checked ? "is-checked" : ""}`}
+                                        >
                                             <div className="kp-check-left">
                                                 <input
                                                     type="checkbox"
@@ -550,7 +459,9 @@ export function KalkuloPage() {
                                     );
                                 })
                             ) : (
-                                <div className="kp-empty-box">Nuk ke shtuar ende produkte të kalkulimit.</div>
+                                <div className="kp-empty-box">
+                                    Nuk ka ende produkte. Shto produkt nga menuja anash.
+                                </div>
                             )}
                         </div>
                     </div>
@@ -819,12 +730,6 @@ const styles = `
     border: 1px solid rgba(255,255,255,0.08);
   }
 
-  .kp-btn-danger-soft {
-    background: rgba(239,68,68,0.12);
-    color: #f87171;
-    border: 1px solid rgba(239,68,68,0.18);
-  }
-
   .kp-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1035,29 +940,6 @@ const styles = `
   .kp-info-row strong {
     text-align: right;
     font-size: 13px;
-  }
-
-  .kp-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border-radius: 18px;
-    background: rgba(255,255,255,0.035);
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .kp-toolbar-info {
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.78);
-  }
-
-  .kp-toolbar-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
   }
 
   .kp-checkbox-list {
@@ -1342,7 +1224,6 @@ const styles = `
     .kp-hero,
     .kp-total-card__top,
     .kp-section-head,
-    .kp-toolbar,
     .kp-check-row,
     .kp-info-row {
       flex-direction: column;
@@ -1374,14 +1255,6 @@ const styles = `
 
     .kp-grand-total {
       white-space: normal;
-    }
-
-    .kp-toolbar-actions {
-      width: 100%;
-    }
-
-    .kp-toolbar-actions .kp-btn {
-      flex: 1;
     }
   }
 `;
