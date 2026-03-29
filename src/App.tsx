@@ -9,6 +9,7 @@ import { FirmaPage } from "./pages/FirmaPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import KalkuloProductPage from "./pages/KalkuloProductPage";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/kalkulo" element={<KalkuloPage />} />
+        <Route path="/kalkulo/produkt" element={<KalkuloProductPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/qmimorja" element={<QmimorjaPage />} />
         <Route path="/parameters" element={<ParametersPage />} />

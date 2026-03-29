@@ -4,8 +4,6 @@ import {
     deleteDoc,
     doc,
     getDocs,
-    orderBy,
-    query,
     serverTimestamp,
     updateDoc,
 } from "firebase/firestore";
@@ -18,23 +16,58 @@ export type CreateQmimorjaPayload = Omit<
     "id" | "createdAt" | "updatedAt" | "ownerId"
 >;
 
+function normalizeText(value: unknown): string {
+    return String(value ?? "")
+        .trim()
+        .toLocaleLowerCase("sq");
+}
+
+function sortQmimorjaItems(items: QmimorjaItem[]): QmimorjaItem[] {
+    return [...items].sort((a, b) => {
+        const categoryCompare = normalizeText(a.category).localeCompare(
+            normalizeText(b.category),
+            "sq",
+            { sensitivity: "base" }
+        );
+
+        if (categoryCompare !== 0) {
+            return categoryCompare;
+        }
+
+        return normalizeText(a.name).localeCompare(
+            normalizeText(b.name),
+            "sq",
+            { sensitivity: "base" }
+        );
+    });
+}
+
 export async function getQmimorjaItems(): Promise<QmimorjaItem[]> {
     const uid = getOwnerId();
 
-    const ref = collection(db, "owners", uid, "qmimorja");
-    const q = query(ref, orderBy("category", "asc"), orderBy("name", "asc"));
-    const snap = await getDocs(q);
+    if (!uid) {
+        throw new Error("Përdoruesi nuk u gjet. Bëj login përsëri.");
+    }
 
-    return snap.docs.map((d) => ({
+    const ref = collection(db, "owners", uid, "qmimorja");
+    const snap = await getDocs(ref);
+
+    const items = snap.docs.map((d) => ({
         id: d.id,
         ...(d.data() as Omit<QmimorjaItem, "id">),
-    }));
+    })) as QmimorjaItem[];
+
+    return sortQmimorjaItems(items);
 }
 
 export async function createQmimorjaItem(
     payload: CreateQmimorjaPayload
 ): Promise<void> {
     const uid = getOwnerId();
+
+    if (!uid) {
+        throw new Error("Përdoruesi nuk u gjet. Bëj login përsëri.");
+    }
 
     await addDoc(collection(db, "owners", uid, "qmimorja"), {
         ...payload,
@@ -50,6 +83,10 @@ export async function updateQmimorjaItem(
 ): Promise<void> {
     const uid = getOwnerId();
 
+    if (!uid) {
+        throw new Error("Përdoruesi nuk u gjet. Bëj login përsëri.");
+    }
+
     await updateDoc(doc(db, "owners", uid, "qmimorja", id), {
         ...payload,
         updatedAt: serverTimestamp(),
@@ -58,6 +95,10 @@ export async function updateQmimorjaItem(
 
 export async function removeQmimorjaItem(id: string): Promise<void> {
     const uid = getOwnerId();
+
+    if (!uid) {
+        throw new Error("Përdoruesi nuk u gjet. Bëj login përsëri.");
+    }
 
     await deleteDoc(doc(db, "owners", uid, "qmimorja", id));
 }
