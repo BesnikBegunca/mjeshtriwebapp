@@ -632,11 +632,14 @@ function PayrollEditorModal({
     const dr = Number(dailyRate || 0);
     const emp = Number(employeePct || 0);
     const emr = Number(employerPct || 0);
-    const gross = dr * workedCount;
+
+    const workedAmount = dr * workedCount;
+    const monthAdvanceTotal = sumAdvances(monthAdvances);
+    const remainingSalary = Math.max(0, workedAmount - monthAdvanceTotal);
+
+    const gross = workedAmount;
     const net = gross * (1 - emp / 100);
     const cost = gross * (1 + emr / 100);
-    const monthAdvanceTotal = sumAdvances(monthAdvances);
-    const remaining = Math.max(0, gross - monthAdvanceTotal);
 
     function toggleDay(day: Date) {
         if (isSunday(day)) return;
@@ -645,6 +648,10 @@ function PayrollEditorModal({
             if (exists) return prev.filter((x) => !sameDate(x, day));
             return [...prev, dateOnly(day)];
         });
+    }
+
+    function openAdvanceModal(day: Date) {
+        setSelectedAdvanceDay(day);
     }
 
     function savePayroll() {
@@ -722,7 +729,7 @@ function PayrollEditorModal({
                     <div className="wp-card wp-calendar-wrap">
                         <h3 className="wp-section-title">Kalendar i punës - {monthLabel(ym)}</h3>
                         <p className="wp-hint">
-                            Kliko ditët që ka punu punëtori. Double click hap avansin për atë ditë.
+                            Kliko ditët që ka punu punëtori. Kliko ikonën në qoshe për avans.
                         </p>
 
                         <div className="wp-calendar-grid">
@@ -756,12 +763,25 @@ function PayrollEditorModal({
                                         key={i + 1}
                                         type="button"
                                         onClick={() => toggleDay(day)}
-                                        onDoubleClick={() => setSelectedAdvanceDay(day)}
                                         className={className}
                                         disabled={sunday}
-                                        title="Double click për avans"
+                                        title={advanceTotal > 0 ? "Ka avans" : "Ditë pune"}
                                     >
                                         <div className="wp-day-number">{i + 1}</div>
+
+                                        <button
+                                            type="button"
+                                            className={`wp-advance-icon ${advanceTotal > 0 ? "is-active" : ""}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAdvanceModal(day);
+                                            }}
+                                            title="Hap avansin"
+                                            aria-label={`Hap avansin për ditën ${i + 1}`}
+                                        >
+                                            €
+                                        </button>
+
                                         <div className="wp-day-sub">
                                             {advanceTotal > 0 ? eur(advanceTotal) : selected ? "Punë" : "—"}
                                         </div>
@@ -771,14 +791,37 @@ function PayrollEditorModal({
                         </div>
                     </div>
 
+                    <div className="wp-payroll-summary-card">
+                        <div className="wp-payroll-summary-row">
+                            <span>Sa ka punu</span>
+                            <strong>{eur(workedAmount)}</strong>
+                        </div>
+                        <div className="wp-payroll-summary-row">
+                            <span>Avansi</span>
+                            <strong>{eur(monthAdvanceTotal)}</strong>
+                        </div>
+                        <div className="wp-payroll-summary-row is-final">
+                            <span>I mbesin pa marrë</span>
+                            <strong>{eur(remainingSalary)}</strong>
+                        </div>
+                    </div>
+
                     <div className="wp-mini-grid">
                         <div className="wp-mini-item">
                             <span>Ditë të punuara</span>
                             <strong>{workedCount}</strong>
                         </div>
                         <div className="wp-mini-item">
-                            <span>Bruto</span>
-                            <strong>{eur(gross)}</strong>
+                            <span>Sa ka punu</span>
+                            <strong>{eur(workedAmount)}</strong>
+                        </div>
+                        <div className="wp-mini-item">
+                            <span>Avansat e muajit</span>
+                            <strong>{eur(monthAdvanceTotal)}</strong>
+                        </div>
+                        <div className="wp-mini-item wp-mini-item-highlight">
+                            <span>I mbesin pa marrë</span>
+                            <strong>{eur(remainingSalary)}</strong>
                         </div>
                         <div className="wp-mini-item">
                             <span>Neto</span>
@@ -787,14 +830,6 @@ function PayrollEditorModal({
                         <div className="wp-mini-item">
                             <span>Kosto firmës</span>
                             <strong>{eur(cost)}</strong>
-                        </div>
-                        <div className="wp-mini-item">
-                            <span>Avansat e muajit</span>
-                            <strong>{eur(monthAdvanceTotal)}</strong>
-                        </div>
-                        <div className="wp-mini-item">
-                            <span>I mbesin me marrë</span>
-                            <strong>{eur(remaining)}</strong>
                         </div>
                     </div>
 
@@ -1003,7 +1038,8 @@ function WorkersPremiumStyles() {
 
       .wp-card,
       .wp-stat-card,
-      .wp-mini-item{
+      .wp-mini-item,
+      .wp-payroll-summary-card{
         border-radius:22px;
         background:linear-gradient(145deg, rgba(30,41,59,.90), rgba(15,23,42,.92));
         border:1px solid rgba(255,255,255,.07);
@@ -1083,55 +1119,53 @@ function WorkersPremiumStyles() {
         place-items:center;
         font-weight:900;
         font-size:20px;
-        color:#dcfce7;
-        background:linear-gradient(135deg, rgba(34,197,94,.22), rgba(16,185,129,.15));
-        border:1px solid rgba(34,197,94,.28);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+        color:#f8fafc;
+        background:linear-gradient(135deg, rgba(59,130,246,.9), rgba(34,197,94,.75));
+        box-shadow:0 10px 24px rgba(59,130,246,.25);
         flex-shrink:0;
       }
 
       .wp-worker-info{
         min-width:0;
+        display:flex;
+        flex-direction:column;
+        gap:4px;
       }
 
       .wp-worker-name{
+        color:#f8fafc;
         font-size:20px;
         font-weight:900;
-        color:#f8fafc;
         line-height:1.2;
       }
 
       .wp-worker-role{
-        color:#94a3b8;
-        margin-top:4px;
+        color:#cbd5e1;
+        font-size:14px;
+        font-weight:700;
       }
 
-      .wp-worker-rate{
-        color:#dbeafe;
-        margin-top:8px;
-      }
-
+      .wp-worker-rate,
       .wp-worker-last{
         color:#94a3b8;
-        margin-top:6px;
         font-size:13px;
       }
 
       .wp-btn-group{
         display:flex;
-        flex-wrap:wrap;
         gap:10px;
+        flex-wrap:wrap;
         justify-content:flex-end;
       }
 
       .wp-btn{
-        appearance:none;
-        border:none;
-        cursor:pointer;
+        border:0;
+        outline:0;
         border-radius:14px;
-        padding:12px 16px;
+        padding:11px 16px;
         font-weight:800;
-        transition:.2s ease;
+        cursor:pointer;
+        transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease;
       }
 
       .wp-btn:hover{
@@ -1145,9 +1179,9 @@ function WorkersPremiumStyles() {
       }
 
       .wp-btn-primary{
-        color:#052e16;
-        background:linear-gradient(135deg,#86efac,#22c55e);
-        box-shadow:0 8px 22px rgba(34,197,94,.28);
+        color:#04130a;
+        background:linear-gradient(135deg, #86efac, #22c55e);
+        box-shadow:0 12px 26px rgba(34,197,94,.28);
       }
 
       .wp-btn-secondary{
@@ -1158,15 +1192,21 @@ function WorkersPremiumStyles() {
 
       .wp-btn-danger{
         color:#fff;
-        background:linear-gradient(135deg,#ef4444,#dc2626);
-        box-shadow:0 8px 22px rgba(239,68,68,.25);
+        background:linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow:0 12px 26px rgba(239,68,68,.24);
+      }
+
+      .wp-mini-grid,
+      .wp-form-grid,
+      .wp-select-row{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:12px;
       }
 
       .wp-mini-grid{
-        display:grid;
         grid-template-columns:repeat(3,minmax(0,1fr));
-        gap:12px;
-        margin-top:16px;
+        margin-top:14px;
       }
 
       .wp-mini-item{
@@ -1183,44 +1223,50 @@ function WorkersPremiumStyles() {
       .wp-mini-item strong{
         color:#f8fafc;
         font-size:18px;
+        font-weight:900;
+      }
+
+      .wp-mini-item-highlight{
+        border:1px solid rgba(34,197,94,.30);
+        background:linear-gradient(145deg, rgba(21,128,61,.24), rgba(15,23,42,.94));
+        box-shadow:0 12px 30px rgba(34,197,94,.18);
+      }
+
+      .wp-mini-item-highlight span,
+      .wp-mini-item-highlight strong{
+        color:#dcfce7;
       }
 
       .wp-form-stack{
         display:flex;
         flex-direction:column;
-        gap:14px;
-      }
-
-      .wp-form-grid{
-        display:grid;
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:12px;
-      }
-
-      .wp-select-row{
-        display:grid;
-        grid-template-columns:1fr 1fr;
         gap:12px;
       }
 
       .wp-input{
         width:100%;
-        border-radius:16px;
-        border:1px solid rgba(255,255,255,.09);
-        background:rgba(15,23,42,.88);
+        min-height:48px;
+        border-radius:14px;
+        border:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.04);
         color:#f8fafc;
-        padding:14px 16px;
+        padding:12px 14px;
         outline:none;
       }
 
       .wp-input::placeholder{
-        color:#64748b;
+        color:#94a3b8;
+      }
+
+      .wp-input:focus{
+        border-color:rgba(59,130,246,.5);
+        box-shadow:0 0 0 3px rgba(59,130,246,.18);
       }
 
       .wp-modal-overlay{
         position:fixed;
         inset:0;
-        background:rgba(2,6,23,.7);
+        background:rgba(2,6,23,.72);
         backdrop-filter:blur(8px);
         display:grid;
         place-items:center;
@@ -1288,6 +1334,7 @@ function WorkersPremiumStyles() {
       }
 
       .wp-day-btn{
+        position:relative;
         min-height:72px;
         border-radius:14px;
         border:1px solid rgba(255,255,255,.08);
@@ -1326,6 +1373,77 @@ function WorkersPremiumStyles() {
         margin-top:6px;
         font-size:12px;
         color:#cbd5e1;
+      }
+
+      .wp-advance-icon{
+        position:absolute;
+        top:6px;
+        right:6px;
+        width:20px;
+        height:20px;
+        border-radius:999px;
+        display:grid;
+        place-items:center;
+        font-size:11px;
+        font-weight:900;
+        border:1px solid rgba(255,255,255,.14);
+        color:#cbd5e1;
+        background:rgba(15,23,42,.75);
+        cursor:pointer;
+        padding:0;
+        transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+      }
+
+      .wp-advance-icon:hover{
+        transform:scale(1.06);
+      }
+
+      .wp-advance-icon.is-active{
+        color:#0f172a;
+        background:linear-gradient(135deg, #facc15, #f59e0b);
+        border-color:rgba(245,158,11,.55);
+        box-shadow:0 6px 14px rgba(245,158,11,.35);
+      }
+
+      .wp-payroll-summary-card{
+        padding:16px;
+        border:1px solid rgba(34,197,94,.22);
+        background:
+          radial-gradient(circle at top right, rgba(34,197,94,.14), transparent 28%),
+          linear-gradient(145deg, rgba(21,128,61,.18), rgba(15,23,42,.95));
+      }
+
+      .wp-payroll-summary-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:12px 0;
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+
+      .wp-payroll-summary-row:last-child{
+        border-bottom:none;
+      }
+
+      .wp-payroll-summary-row span{
+        color:#cbd5e1;
+        font-weight:700;
+      }
+
+      .wp-payroll-summary-row strong{
+        color:#f8fafc;
+        font-size:20px;
+        font-weight:900;
+      }
+
+      .wp-payroll-summary-row.is-final span{
+        color:#86efac;
+      }
+
+      .wp-payroll-summary-row.is-final strong{
+        color:#dcfce7;
+        font-size:24px;
       }
 
       .wp-sticky-footer{
@@ -1397,6 +1515,22 @@ function WorkersPremiumStyles() {
         .wp-day-btn{
           min-height:64px;
           padding:8px 6px;
+        }
+
+        .wp-advance-icon{
+          top:5px;
+          right:5px;
+          width:18px;
+          height:18px;
+          font-size:10px;
+        }
+
+        .wp-payroll-summary-row strong{
+          font-size:18px;
+        }
+
+        .wp-payroll-summary-row.is-final strong{
+          font-size:21px;
         }
       }
     `}</style>
