@@ -1304,9 +1304,20 @@ function WorkersPremiumStyles() {
         flex-wrap:wrap;
       }
 
-      .wp-calendar-wrap{
-        padding:16px;
-      }
+     .wp-calendar-wrap{
+  padding:16px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.wp-calendar-wrap::-webkit-scrollbar{
+  height:8px;
+}
+
+.wp-calendar-wrap::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,.35);
+  border-radius:999px;
+}
 
       .wp-section-title{
         margin:0 0 8px;
@@ -1320,10 +1331,11 @@ function WorkersPremiumStyles() {
       }
 
       .wp-calendar-grid{
-        display:grid;
-        grid-template-columns:repeat(7,minmax(0,1fr));
-        gap:8px;
-      }
+  display:grid;
+  grid-template-columns:repeat(7, minmax(78px, 1fr));
+  gap:8px;
+  min-width:100%;
+}
 
       .wp-calendar-head{
         color:#94a3b8;
@@ -1334,15 +1346,16 @@ function WorkersPremiumStyles() {
       }
 
       .wp-day-btn{
-        position:relative;
-        min-height:72px;
-        border-radius:14px;
-        border:1px solid rgba(255,255,255,.08);
-        background:rgba(255,255,255,.04);
-        color:#e2e8f0;
-        cursor:pointer;
-        padding:10px 8px;
-      }
+  position:relative;
+  min-height:78px;
+  min-width:78px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  color:#e2e8f0;
+  cursor:pointer;
+  padding:10px 8px;
+}
 
       .wp-day-btn.is-selected{
         background:rgba(34,197,94,.18);
@@ -1473,66 +1486,94 @@ function WorkersPremiumStyles() {
       }
 
       @media (max-width: 720px){
-        .wp-page{
-          padding:14px;
-        }
+  .wp-page{
+    padding:14px;
+  }
 
-        .wp-hero{
-          padding:16px;
-          border-radius:22px;
-        }
+  .wp-hero{
+    padding:16px;
+    border-radius:22px;
+  }
 
-        .wp-title{
-          font-size:26px;
-        }
+  .wp-title{
+    font-size:26px;
+  }
 
-        .wp-stats-grid,
-        .wp-mini-grid,
-        .wp-form-grid,
-        .wp-select-row{
-          grid-template-columns:1fr;
-        }
+  .wp-stats-grid,
+  .wp-mini-grid,
+  .wp-form-grid,
+  .wp-select-row{
+    grid-template-columns:1fr;
+  }
 
-        .wp-worker-head{
-          flex-direction:column;
-        }
+  .wp-worker-head{
+    flex-direction:column;
+  }
 
-        .wp-btn-group,
-        .wp-actions,
-        .wp-modal-actions{
-          width:100%;
-          justify-content:stretch;
-        }
+  .wp-btn-group,
+  .wp-actions,
+  .wp-modal-actions{
+    width:100%;
+    justify-content:stretch;
+  }
 
-        .wp-btn{
-          width:100%;
-        }
+  .wp-btn{
+    width:100%;
+  }
 
-        .wp-calendar-grid{
-          gap:6px;
-        }
+  .wp-calendar-wrap{
+    padding:12px;
+    margin-inline:-4px;
+  }
 
-        .wp-day-btn{
-          min-height:64px;
-          padding:8px 6px;
-        }
+  .wp-calendar-grid{
+    grid-template-columns:repeat(7, 72px);
+    gap:6px;
+    min-width:max-content;
+    width:max-content;
+  }
 
-        .wp-advance-icon{
-          top:5px;
-          right:5px;
-          width:18px;
-          height:18px;
-          font-size:10px;
-        }
+  .wp-calendar-head{
+    width:72px;
+    min-width:72px;
+    font-size:11px;
+    padding:4px 0 6px;
+  }
 
-        .wp-payroll-summary-row strong{
-          font-size:18px;
-        }
+  .wp-day-btn{
+    width:72px;
+    min-width:72px;
+    min-height:68px;
+    padding:8px 6px;
+    border-radius:12px;
+  }
 
-        .wp-payroll-summary-row.is-final strong{
-          font-size:21px;
-        }
-      }
+  .wp-day-number{
+    font-size:15px;
+  }
+
+  .wp-day-sub{
+    margin-top:5px;
+    font-size:11px;
+    line-height:1.2;
+  }
+
+  .wp-advance-icon{
+    top:4px;
+    right:4px;
+    width:18px;
+    height:18px;
+    font-size:10px;
+  }
+
+  .wp-payroll-summary-row strong{
+    font-size:18px;
+  }
+
+  .wp-payroll-summary-row.is-final strong{
+    font-size:21px;
+  }
+}
     `}</style>
     );
 }
